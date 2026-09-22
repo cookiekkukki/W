@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>이미지 WebP 변환기</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 50px auto;
+      padding: 20px;
+      text-align: center;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    input[type="file"] {
+      margin: 20px 0;
+    }
+    .control-group {
+      margin: 15px 0;
+    }
+    #preview {
+      max-width: 100%;
+      height: auto;
+      margin-top: 15px;
+      display: none;
+      border: 1px solid #ccc;
+    }
+    #downloadBtn {
+      display: none;
+      margin: 20px auto;
+      padding: 10px 20px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    #downloadBtn:hover {
+      background-color: #45a049;
+    }
+    #info {
+      margin-top: 10px;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>WebP 이미지 변환기</h2>
+  <p>이미지(JPG, PNG 등)를 선택하면 WebP 포맷으로 변환됩니다.</p>
+
+  <input type="file" id="uploadInput" accept="image/*">
+
+  <div class="control-group">
+    <label for="quality">화질 설정 (1 ~ 100): </label>
+    <input type="number" id="quality" value="80" min="1" max="100" style="width: 60px;"> %
+  </div>
+
+  <br>
+  <img id="preview" alt="변환된 이미지 미리보기">
+  <div id="info"></div>
+  
+  <a id="downloadLink"><button id="downloadBtn">WebP 이미지 다운로드</button></a>
+
+  <script>
+    const uploadInput = document.getElementById('uploadInput');
+    const qualityInput = document.getElementById('quality');
+    const preview = document.getElementById('preview');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const downloadLink = document.getElementById('downloadLink');
+    const info = document.getElementById('info');
+
+    let currentFile = null;
+
+    // 파일 선택 시 처리
+    uploadInput.addEventListener('change', function(e) {
+      currentFile = e.target.files[0];
+      if (currentFile) {
+        convertToWebP();
+      }
+    });
+
+    // 화질 변경 시 실시간 재변환
+    qualityInput.addEventListener('change', function() {
+      if (currentFile) {
+        convertToWebP();
+      }
+    });
+
+    function convertToWebP() {
+      const reader = new FileReader();
+      
+      reader.onload = function(event) {
+        const img = new Image();
+        img.onload = function() {
+          // Canvas 생성
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0);
+
+          // 입력된 화질 값을 0~1 사이로 변환 (예: 80 -> 0.8)
+          const quality = parseFloat(qualityInput.value) / 100 || 0.8;
+
+          // WebP 데이터 URL로 변환
+          const webpDataUrl = canvas.toDataURL('image/webp', quality);
+
+          // 미리보기 및 다운로드 버튼 설정
+          preview.src = webpDataUrl;
+          preview.style.display = 'block';
+
+          // 파일 이름 설정 (기존파일명.webp)
+          const originalName = currentFile.name.substring(0, currentFile.name.lastIndexOf('.'));
+          downloadLink.href = webpDataUrl;
+          downloadLink.download = `${originalName}.webp`;
+          downloadBtn.style.display = 'block';
+
+          // 정보 표시
+          info.innerText = `원본 파일: ${currentFile.name} | 변환 완료 (화질: ${Math.round(quality * 100)}%)`;
+        };
+        img.src = event.target.result;
+      };
+
+      reader.readAsDataURL(currentFile);
+    }
+  </script>
+
+</body>
+</html>
