@@ -15,8 +15,13 @@
       border-radius: 10px;
       box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
-    input[type="file"] {
-      margin: 20px 0;
+    input[type="file"], input[type="text"], input[type="number"] {
+      margin: 10px 0;
+      padding: 8px;
+    }
+    input[type="text"] {
+      width: 60%;
+      box-sizing: border-box;
     }
     .control-group {
       margin: 15px 0;
@@ -34,6 +39,132 @@
       padding: 10px 20px;
       background-color: #4CAF50;
       color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    #downloadBtn:hover {
+      background-color: #45a049;
+    }
+    #info {
+      margin-top: 10px;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>WebP 이미지 변환기</h2>
+  <p>이미지(JPG, PNG 등)를 선택하면 WebP 포맷으로 변환됩니다.</p>
+
+  <input type="file" id="uploadInput" accept="image/*"><br>
+
+  <!-- 파일 이름 변경 입력창 추가 -->
+  <div class="control-group">
+    <label for="customName">저장할 파일 이름: </label><br>
+    <input type="text" id="customName" placeholder="입력 안 하면 기존 이름으로 저장됩니다"> .webp
+  </div>
+
+  <div class="control-group">
+    <label for="quality">화질 설정 (1 ~ 100): </label>
+    <input type="number" id="quality" value="80" min="1" max="100" style="width: 60px;"> %
+  </div>
+
+  <br>
+  <img id="preview" alt="변환된 이미지 미리보기">
+  <div id="info"></div>
+  
+  <a id="downloadLink"><button id="downloadBtn">WebP 이미지 다운로드</button></a>
+
+  <script>
+    const uploadInput = document.getElementById('uploadInput');
+    const customNameInput = document.getElementById('customName');
+    const qualityInput = document.getElementById('quality');
+    const preview = document.getElementById('preview');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const downloadLink = document.getElementById('downloadLink');
+    const info = document.getElementById('info');
+
+    let currentFile = null;
+
+    // 파일 선택 시 처리
+    uploadInput.addEventListener('change', function(e) {
+      currentFile = e.target.files[0];
+      if (currentFile) {
+        // 새로 파일을 올렸을 때 기존 입력값이 없으면 힌트/기본값으로 보여줌
+        const originalName = currentFile.name.substring(0, currentFile.name.lastIndexOf('.'));
+        if (!customNameInput.value) {
+          customNameInput.placeholder = originalName;
+        }
+        convertToWebP();
+      }
+    });
+
+    // 화질 변경 시 변환 실행
+    qualityInput.addEventListener('change', function() {
+      if (currentFile) {
+        convertToWebP();
+      }
+    });
+
+    // 파일 이름 입력 시 다운로드 링크 파일명 실시간 업데이트
+    customNameInput.addEventListener('input', function() {
+      if (currentFile) {
+        updateDownloadName();
+      }
+    });
+
+    function convertToWebP() {
+      const reader = new FileReader();
+      
+      reader.onload = function(event) {
+        const img = new Image();
+        img.onload = function() {
+          // Canvas 생성
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0);
+
+          // 화질 설정 (0 ~ 1)
+          const quality = parseFloat(qualityInput.value) / 100 || 0.8;
+
+          // WebP 데이터 URL로 변환
+          const webpDataUrl = canvas.toDataURL('image/webp', quality);
+
+          // 미리보기 이미지 설정
+          preview.src = webpDataUrl;
+          preview.style.display = 'block';
+
+          // 다운로드 링크 주소 업데이트
+          downloadLink.href = webpDataUrl;
+          
+          // 파일 이름 설정
+          updateDownloadName();
+
+          downloadBtn.style.display = 'block';
+          info.innerText = `원본 파일: ${currentFile.name} | 변환 완료 (화질: ${Math.round(quality * 100)}%)`;
+        };
+        img.src = event.target.result;
+      };
+
+      reader.readAsDataURL(currentFile);
+    }
+
+    // 다운로드 파일명 결정 함수
+    function updateDownloadName() {
+      const originalName = currentFile.name.substring(0, currentFile.name.lastIndexOf('.'));
+      // 사용자가 이름을 입력했으면 해당 이름, 없으면 원본 이름 사용
+      const saveName = customNameInput.value.trim() || originalName;
+      downloadLink.download = `${saveName}.webp`;
+    }
+  </script>
+
+</body>
+</html>
       border: none;
       border-radius: 5px;
       cursor: pointer;
